@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Plus, Search, Trash2, Edit3, Save, X, LogOut, User as UserIcon, Bell, AlertTriangle, CheckCircle, Droplets, Thermometer, Wind, Leaf, MapPin } from 'lucide-react';
+import { Plus, Search, Trash2, Edit3, Save, X, LogOut, User as UserIcon, Bell, AlertTriangle, CheckCircle, Droplets, Thermometer, Wind, Leaf, MapPin, Tablet } from 'lucide-react';
 import Login from './components/Login';
 
 const BASE_URL = "http://127.0.0.1:8000/api";
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
-  const [activeTab, setActiveTab] = useState('readings'); // 'readings', 'farms', 'nodes'
+  const [activeTab, setActiveTab] = useState('readings'); 
   const [readings, setReadings] = useState([]);
   const [farms, setFarms] = useState([]);
   const [nodes, setNodes] = useState([]);
@@ -16,7 +16,7 @@ function App() {
   const [editData, setEditData] = useState({});
   const [selectedReading, setSelectedReading] = useState(null);
   const [showAlerts, setShowAlerts] = useState(false);
-  const [showModal, setShowModal] = useState(null); 
+  const [showModal, setShowModal] = useState(null); // 'farm', 'node'
   const [formData, setFormData] = useState({});
   const username = localStorage.getItem('username');
 
@@ -71,7 +71,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans">
-      {/* 1. Navbar: Consistent Alert Notification Hub */}
+      {/* 1. Navbar */}
       <nav className="bg-white border-b border-slate-100 px-8 py-4 flex justify-between items-center sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <div className="bg-emerald-600 p-1.5 rounded-lg text-white"><CheckCircle size={20} /></div>
@@ -81,7 +81,13 @@ function App() {
         <div className="flex items-center gap-6">
           <div className="flex bg-slate-100 p-1 rounded-xl">
             {['readings', 'farms', 'nodes'].map((tab) => (
-              <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all capitalize ${activeTab === tab ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500'}`}>{tab}</button>
+              <button 
+                key={tab} 
+                onClick={() => {setActiveTab(tab); setSearch("");}} 
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all capitalize ${activeTab === tab ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500'}`}
+              >
+                {tab}
+              </button>
             ))}
           </div>
 
@@ -123,15 +129,20 @@ function App() {
         <header className="flex justify-between items-end mb-10">
           <div>
             <h1 className="text-3xl font-bold text-slate-900 capitalize">{activeTab}</h1>
-            <p className="text-slate-500 mt-1">Detailed management for your connected agricultural assets.</p>
+            <p className="text-slate-500 mt-1">Management and monitoring for your connected agricultural assets.</p>
           </div>
           <div className="flex gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-3 text-slate-400" size={20} />
-              <input type="text" placeholder="Search..." className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none w-64 shadow-sm" onChange={(e) => setSearch(e.target.value)} />
+              <input type="text" value={search} placeholder={`Search ${activeTab}...`} className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none w-64 shadow-sm" onChange={(e) => setSearch(e.target.value)} />
             </div>
             {activeTab !== 'readings' && (
-              <button onClick={() => {setEditingId(null); setEditData({}); setShowModal(activeTab === 'farms' ? 'farm' : 'node');}} className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-medium flex items-center gap-2 shadow-lg transition-all"><Plus size={20} /> Add {activeTab === 'farms' ? 'Farm' : 'Node'}</button>
+              <button 
+                onClick={() => {setEditingId(null); setEditData({}); setShowModal(activeTab === 'farms' ? 'farm' : 'node');}} 
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-medium flex items-center gap-2 shadow-lg transition-all"
+              >
+                <Plus size={20} /> Add {activeTab === 'farms' ? 'Farm' : 'Node'}
+              </button>
             )}
           </div>
         </header>
@@ -160,7 +171,6 @@ function App() {
                   <td className="px-4 py-4 font-medium">{r.soil_moisture}%</td><td className="px-4 py-4">{r.ph}</td><td className="px-4 py-4">{r.temperature}°</td><td className="px-4 py-4">{r.humidity}%</td><td className="px-4 py-4">{r.leaf_wetness}</td>
                   <td className="px-4 py-4">{r.is_abnormal ? <span className="text-red-600 text-xs font-bold">Abnormal</span> : <span className="text-emerald-600 text-xs font-bold">Normal</span>}</td>
                   <td className="px-6 py-4 text-right flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={(e) => {e.stopPropagation(); setEditingId(r.id); setEditData(r); setShowModal('reading');}} className="text-slate-300 hover:text-blue-500 p-2"><Edit3 size={16}/></button>
                     <button onClick={(e) => {e.stopPropagation(); if(confirm("Delete reading?")) handleAction('delete', 'reading', r.id)}} className="text-slate-300 hover:text-red-500 p-2"><Trash2 size={16}/></button>
                   </td>
                 </tr>
@@ -170,8 +180,8 @@ function App() {
                   <td className="px-6 py-4 font-bold">{f.name}</td>
                   <td className="px-6 py-4 text-slate-500"><MapPin size={14} className="inline mr-1"/> {f.location}</td>
                   <td className="px-6 py-4 text-right flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={(e) => {setEditData(f); setEditingId(f.id); setShowModal('farm');}} className="text-slate-300 hover:text-blue-500 p-2"><Edit3 size={16}/></button>
-                    <button onClick={() => {if(confirm("Delete farm?")) handleAction('delete', 'farm', f.id)}} className="text-slate-300 hover:text-red-500 p-2"><Trash2 size={16}/></button>
+                    <button onClick={(e) => {e.stopPropagation(); setEditData(f); setEditingId(f.id); setShowModal('farm');}} className="text-slate-300 hover:text-blue-500 p-2"><Edit3 size={16}/></button>
+                    <button onClick={(e) => {e.stopPropagation(); if(confirm("Delete farm?")) handleAction('delete', 'farm', f.id)}} className="text-slate-300 hover:text-red-500 p-2"><Trash2 size={16}/></button>
                   </td>
                 </tr>
               ))}
@@ -181,8 +191,8 @@ function App() {
                   <td className="px-6 py-4"><span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full text-[10px] font-bold uppercase">{n.status}</span></td>
                   <td className="px-6 py-4 text-slate-500">{n.battery_lvl}%</td>
                   <td className="px-6 py-4 text-right flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={(e) => {setEditData(n); setEditingId(n.id); setShowModal('node');}} className="text-slate-300 hover:text-blue-500 p-2"><Edit3 size={16}/></button>
-                    <button onClick={() => {if(confirm("Delete node?")) handleAction('delete', 'node', n.id)}} className="text-slate-300 hover:text-red-500 p-2"><Trash2 size={16}/></button>
+                    <button onClick={(e) => {e.stopPropagation(); setEditData(n); setEditingId(n.id); setShowModal('node');}} className="text-slate-300 hover:text-blue-500 p-2"><Edit3 size={16}/></button>
+                    <button onClick={(e) => {e.stopPropagation(); if(confirm("Delete node?")) handleAction('delete', 'node', n.id)}} className="text-slate-300 hover:text-red-500 p-2"><Trash2 size={16}/></button>
                   </td>
                 </tr>
               ))}
@@ -191,29 +201,25 @@ function App() {
         </div>
       </div>
 
-      {/* 3. Add/Edit Modal */}
+      {/* 3. Modals */}
       {showModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <form onSubmit={(e) => {e.preventDefault(); handleAction(editingId ? 'patch' : 'post', showModal === 'reading' ? 'reading' : showModal, editingId || '', formData)}} className="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl">
+          <form onSubmit={(e) => {e.preventDefault(); handleAction(editingId ? 'patch' : 'post', showModal, editingId || '', formData)}} className="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl">
             <h2 className="text-2xl font-bold mb-6 capitalize">{editingId ? 'Edit' : 'Add'} {showModal}</h2>
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto px-1">
-              {showModal === 'reading' ? (
-                <>
-                  <input type="number" placeholder="Soil Moisture" defaultValue={editData.soil_moisture} className="w-full p-3 bg-slate-50 rounded-xl outline-none" onChange={e => setFormData({...formData, soil_moisture: e.target.value})}/>
-                  <input type="number" placeholder="Temperature" defaultValue={editData.temperature} className="w-full p-3 bg-slate-50 rounded-xl outline-none" onChange={e => setFormData({...formData, temperature: e.target.value})}/>
-                  <input type="number" placeholder="Humidity" defaultValue={editData.humidity} className="w-full p-3 bg-slate-50 rounded-xl outline-none" onChange={e => setFormData({...formData, humidity: e.target.value})}/>
-                </>
-              ) : showModal === 'farm' ? (
+            <div className="space-y-4">
+              {showModal === 'farm' ? (
                 <>
                   <input type="text" placeholder="Farm Name" defaultValue={editData.name} className="w-full p-3 bg-slate-50 rounded-xl outline-none" onChange={e => setFormData({...formData, name: e.target.value})}/>
                   <input type="text" placeholder="Location" defaultValue={editData.location} className="w-full p-3 bg-slate-50 rounded-xl outline-none" onChange={e => setFormData({...formData, location: e.target.value})}/>
                 </>
               ) : (
                 <>
-                  <select className="w-full p-3 bg-slate-50 rounded-xl outline-none" defaultValue={editData.farm} onChange={e => setFormData({...formData, farm: e.target.value})}>
-                    <option value="">Select Farm</option>{farms.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                  <select className="w-full p-3 bg-slate-50 rounded-xl outline-none" value={formData.farm || editData.farm || ""} onChange={e => setFormData({...formData, farm: e.target.value})}>
+                    <option value="">Select Farm</option>
+                    {farms.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
                   </select>
-                  <input type="text" placeholder="Status" defaultValue={editData.status || "Active"} className="w-full p-3 bg-slate-50 rounded-xl outline-none" onChange={e => setFormData({...formData, status: e.target.value})}/>
+                  <input type="number" step="0.001" placeholder="Latitude" defaultValue={editData.latitude} className="w-full p-3 bg-slate-50 rounded-xl outline-none" onChange={e => setFormData({...formData, latitude: e.target.value})}/>
+                  <input type="number" step="0.001" placeholder="Longitude" defaultValue={editData.longitude} className="w-full p-3 bg-slate-50 rounded-xl outline-none" onChange={e => setFormData({...formData, longitude: e.target.value})}/>
                 </>
               )}
             </div>
@@ -225,7 +231,6 @@ function App() {
         </div>
       )}
 
-      {/* 4. Advice Modal */}
       {selectedReading && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-[2rem] w-full max-w-xl shadow-2xl overflow-hidden">

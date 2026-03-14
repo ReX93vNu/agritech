@@ -33,3 +33,6 @@ class FarmViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Farm.objects.filter(owner=self.request.user)
+    
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user) # sets user to the logged in user when making new records in front end

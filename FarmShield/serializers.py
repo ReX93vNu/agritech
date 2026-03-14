@@ -36,5 +36,6 @@ class SensorSerializer(serializers.ModelSerializer):
 class FarmSerializer(serializers.ModelSerializer):
     class Meta:
         model = Farm
-        fields = '__all__'
+        fields = ['id', 'name', 'location', 'owner']
+        read_only_fields = ['owner'] 
 
