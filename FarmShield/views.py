@@ -24,6 +24,12 @@ class SensorViewSet(viewsets.ModelViewSet):
     queryset = Sensor.objects.all()
     serializer_class = SensorSerializer
 
+    def get_queryset(self):
+        return Sensor.objects.filter(farm__owner=self.request.user)
+
 class FarmViewSet(viewsets.ModelViewSet):
     queryset = Farm.objects.all()
     serializer_class = FarmSerializer
+
+    def get_queryset(self):
+        return Farm.objects.filter(owner=self.request.user)
