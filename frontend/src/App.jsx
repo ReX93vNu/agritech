@@ -22,7 +22,6 @@ function App() {
 
   const headers = { Authorization: `Token ${token}` };
 
-  // FIX: Ensured ?search=${search} is applied to ALL endpoints
   const fetchData = async () => {
     try {
       const [r, f, n] = await Promise.all([
@@ -72,6 +71,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans">
+      {/* 1. Navbar */}
       <nav className="bg-white border-b border-slate-100 px-8 py-4 flex justify-between items-center sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <div className="bg-emerald-600 p-1.5 rounded-lg text-white"><CheckCircle size={20} /></div>
@@ -147,6 +147,7 @@ function App() {
           </div>
         </header>
 
+        {/* 2. Main Tables */}
         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
           <table className="w-full text-left">
             <thead className="bg-slate-50/50 border-b border-slate-100 text-[11px] uppercase tracking-wider text-slate-500 font-bold">
@@ -160,7 +161,13 @@ function App() {
               ) : activeTab === 'farms' ? (
                 <tr><th className="px-6 py-4">Farm Name</th><th className="px-6 py-4">Location</th><th className="px-6 py-4 text-right">Actions</th></tr>
               ) : (
-                <tr><th className="px-6 py-4">Node ID</th><th className="px-6 py-4">Status</th><th className="px-6 py-4">Battery</th><th className="px-6 py-4 text-right">Actions</th></tr>
+                <tr>
+                  <th className="px-6 py-4">Node ID</th>
+                  <th className="px-6 py-4">Farm</th> {/* New Column Header */}
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4">Battery</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
+                </tr>
               )}
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -187,6 +194,10 @@ function App() {
               {activeTab === 'nodes' && nodes.map((n) => (
                 <tr key={n.id} className="hover:bg-slate-50/50 group transition-colors">
                   <td className="px-6 py-4 font-bold">Node #{n.id}</td>
+                  {/* New Farm Column Data */}
+                  <td className="px-6 py-4 text-sm font-medium text-slate-600">
+                    {n.farm_name || `Farm #${n.farm}`}
+                  </td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${n.status === 'Active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                       {n.status}
@@ -223,19 +234,24 @@ function App() {
                 </>
               ) : (
                 <>
-                  <select className="w-full p-3 bg-slate-50 rounded-xl outline-none" value={formData.farm || editData.farm || ""} onChange={e => setFormData({...formData, farm: e.target.value})}>
-                    <option value="">Select Farm</option>
-                    {farms.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-                  </select>
-                  {/* Status Dropdown */}
-                  <select 
-                    className="w-full p-3 bg-slate-50 rounded-xl outline-none" 
-                    value={formData.status || editData.status || "Active"} 
-                    onChange={e => setFormData({...formData, status: e.target.value})}
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Assigned Farm</label>
+                    <select className="w-full p-3 bg-slate-50 rounded-xl outline-none" value={formData.farm || editData.farm || ""} onChange={e => setFormData({...formData, farm: e.target.value})}>
+                      <option value="">Select Farm</option>
+                      {farms.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Node Status</label>
+                    <select 
+                      className="w-full p-3 bg-slate-50 rounded-xl outline-none" 
+                      value={formData.status || editData.status || "Active"} 
+                      onChange={e => setFormData({...formData, status: e.target.value})}
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+                  </div>
                   <input type="number" step="0.001" placeholder="Latitude" defaultValue={editData.latitude} className="w-full p-3 bg-slate-50 rounded-xl outline-none" onChange={e => setFormData({...formData, latitude: e.target.value})}/>
                   <input type="number" step="0.001" placeholder="Longitude" defaultValue={editData.longitude} className="w-full p-3 bg-slate-50 rounded-xl outline-none" onChange={e => setFormData({...formData, longitude: e.target.value})}/>
                 </>

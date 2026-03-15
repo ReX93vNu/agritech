@@ -44,17 +44,24 @@ class SensorViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        queryset = Sensor.objects.filter(farm__owner=self.request.user)
+        user = self.request.user
+        queryset = Sensor.objects.filter(farm__owner=user)
         
         search = self.request.query_params.get('search', None)
         
         if search:
-            if search.isdigit(): # ID search
+            s = search.lower()
+            
+            # FIX 1: Exact status matching to prevent 'active' showing 'inactive'
+            if s in ['active', 'inactive']:
+                # Capitalize to match the "Active"/"Inactive" string in your model
+                queryset = queryset.filter(status=s.capitalize())
+            elif search.isdigit():
                 queryset = queryset.filter(id=search)
             else:
-                queryset = queryset.filter( # searches for names
-                    Q(farm__name__icontains=search) | 
-                    Q(status__icontains=search)
+                # FIX 2: Added farm name search for the node tab
+                queryset = queryset.filter(
+                    Q(farm__name__icontains=search)
                 )
                 
         return queryset.order_by('id')

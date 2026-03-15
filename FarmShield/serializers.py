@@ -29,9 +29,11 @@ class AlertSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class SensorSerializer(serializers.ModelSerializer):
+    farm_name = serializers.ReadOnlyField(source='farm.name')
+
     class Meta:
         model = Sensor
-        fields = '__all__'
+        fields = ['id', 'farm', 'farm_name', 'status', 'battery_lvl', 'latitude', 'longitude']
 
 class FarmSerializer(serializers.ModelSerializer):
     class Meta:
