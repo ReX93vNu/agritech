@@ -16,18 +16,19 @@ function App() {
   const [editData, setEditData] = useState({});
   const [selectedReading, setSelectedReading] = useState(null);
   const [showAlerts, setShowAlerts] = useState(false);
-  const [showModal, setShowModal] = useState(null); // 'farm', 'node'
+  const [showModal, setShowModal] = useState(null); 
   const [formData, setFormData] = useState({});
   const username = localStorage.getItem('username');
 
   const headers = { Authorization: `Token ${token}` };
 
+  // FIX: Ensured ?search=${search} is applied to ALL endpoints
   const fetchData = async () => {
     try {
       const [r, f, n] = await Promise.all([
         axios.get(`${BASE_URL}/readings/?search=${search}`, { headers }),
-        axios.get(`${BASE_URL}/farms/`, { headers }),
-        axios.get(`${BASE_URL}/sensors/`, { headers })
+        axios.get(`${BASE_URL}/farms/?search=${search}`, { headers }),
+        axios.get(`${BASE_URL}/sensors/?search=${search}`, { headers })
       ]);
       setReadings(r.data);
       setFarms(f.data);
@@ -71,7 +72,6 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans">
-      {/* 1. Navbar */}
       <nav className="bg-white border-b border-slate-100 px-8 py-4 flex justify-between items-center sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <div className="bg-emerald-600 p-1.5 rounded-lg text-white"><CheckCircle size={20} /></div>
@@ -147,7 +147,6 @@ function App() {
           </div>
         </header>
 
-        {/* 2. Main Tables */}
         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
           <table className="w-full text-left">
             <thead className="bg-slate-50/50 border-b border-slate-100 text-[11px] uppercase tracking-wider text-slate-500 font-bold">
@@ -188,11 +187,22 @@ function App() {
               {activeTab === 'nodes' && nodes.map((n) => (
                 <tr key={n.id} className="hover:bg-slate-50/50 group transition-colors">
                   <td className="px-6 py-4 font-bold">Node #{n.id}</td>
-                  <td className="px-6 py-4"><span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full text-[10px] font-bold uppercase">{n.status}</span></td>
-                  <td className="px-6 py-4 text-slate-500">{n.battery_lvl}%</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${n.status === 'Active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                      {n.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-8 h-4 border-2 rounded-sm relative p-0.5 ${n.battery_lvl < 20 ? 'border-red-500' : 'border-slate-400'}`}>
+                        <div className={`h-full transition-all ${n.battery_lvl < 20 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${n.battery_lvl}%` }} />
+                      </div>
+                      <span className={`text-xs font-bold ${n.battery_lvl < 20 ? 'text-red-500' : 'text-slate-500'}`}>{n.battery_lvl}%</span>
+                    </div>
+                  </td>
                   <td className="px-6 py-4 text-right flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={(e) => {e.stopPropagation(); setEditData(n); setEditingId(n.id); setShowModal('node');}} className="text-slate-300 hover:text-blue-500 p-2"><Edit3 size={16}/></button>
-                    <button onClick={(e) => {e.stopPropagation(); if(confirm("Delete node?")) handleAction('delete', 'node', n.id)}} className="text-slate-300 hover:text-red-500 p-2"><Trash2 size={16}/></button>
+                    <button onClick={() => {setEditData(n); setEditingId(n.id); setShowModal('node');}} className="text-slate-300 hover:text-blue-500 p-2"><Edit3 size={16}/></button>
+                    <button onClick={() => {if(confirm("Delete node?")) handleAction('delete', 'node', n.id)}} className="text-slate-300 hover:text-red-500 p-2"><Trash2 size={16}/></button>
                   </td>
                 </tr>
               ))}
@@ -201,7 +211,6 @@ function App() {
         </div>
       </div>
 
-      {/* 3. Modals */}
       {showModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <form onSubmit={(e) => {e.preventDefault(); handleAction(editingId ? 'patch' : 'post', showModal, editingId || '', formData)}} className="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl">
@@ -217,6 +226,15 @@ function App() {
                   <select className="w-full p-3 bg-slate-50 rounded-xl outline-none" value={formData.farm || editData.farm || ""} onChange={e => setFormData({...formData, farm: e.target.value})}>
                     <option value="">Select Farm</option>
                     {farms.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                  </select>
+                  {/* Status Dropdown */}
+                  <select 
+                    className="w-full p-3 bg-slate-50 rounded-xl outline-none" 
+                    value={formData.status || editData.status || "Active"} 
+                    onChange={e => setFormData({...formData, status: e.target.value})}
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
                   </select>
                   <input type="number" step="0.001" placeholder="Latitude" defaultValue={editData.latitude} className="w-full p-3 bg-slate-50 rounded-xl outline-none" onChange={e => setFormData({...formData, latitude: e.target.value})}/>
                   <input type="number" step="0.001" placeholder="Longitude" defaultValue={editData.longitude} className="w-full p-3 bg-slate-50 rounded-xl outline-none" onChange={e => setFormData({...formData, longitude: e.target.value})}/>

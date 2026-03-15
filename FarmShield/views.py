@@ -3,6 +3,7 @@ from .models import Farm, Sensor, Reading, Alert
 from .serializers import FarmSerializer, SensorSerializer, ReadingSerializer, AlertSerializer
 from django.db.models import Q
 
+
 class ReadingViewSet(viewsets.ModelViewSet):
     serializer_class = ReadingSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -30,23 +31,56 @@ class ReadingViewSet(viewsets.ModelViewSet):
                 
         return queryset.order_by('-timestamp')
 
+
+
 class AlertViewSet(viewsets.ModelViewSet):
     queryset = Alert.objects.all().order_by('-timestamp')
     serializer_class = AlertSerializer
 
+
+
 class SensorViewSet(viewsets.ModelViewSet):
-    queryset = Sensor.objects.all()
     serializer_class = SensorSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Sensor.objects.filter(farm__owner=self.request.user)
+        queryset = Sensor.objects.filter(farm__owner=self.request.user)
+        
+        search = self.request.query_params.get('search', None)
+        
+        if search:
+            if search.isdigit(): # ID search
+                queryset = queryset.filter(id=search)
+            else:
+                queryset = queryset.filter( # searches for names
+                    Q(farm__name__icontains=search) | 
+                    Q(status__icontains=search)
+                )
+                
+        return queryset.order_by('id')
+
+
 
 class FarmViewSet(viewsets.ModelViewSet):
-    queryset = Farm.objects.all()
     serializer_class = FarmSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Farm.objects.filter(owner=self.request.user)
+        queryset = Farm.objects.filter(owner=self.request.user)
+        
+        search = self.request.query_params.get('search', None)
+        
+        if search:
+            queryset = queryset.filter( # fuzzy search for name/location
+                Q(name__icontains=search) | 
+                Q(location__icontains=search)
+            )
+        
+        return queryset.order_by('name')
     
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user) # sets user to the logged in user when making new records in front end
+        
+        
+        
+
