@@ -1,20 +1,34 @@
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, permissions
 from .models import Farm, Sensor, Reading, Alert
 from .serializers import FarmSerializer, SensorSerializer, ReadingSerializer, AlertSerializer
-from rest_framework import viewsets, permissions
+from django.db.models import Q
 
 class ReadingViewSet(viewsets.ModelViewSet):
-    queryset = Reading.objects.all().order_by('-timestamp')
     serializer_class = ReadingSerializer
     permission_classes = [permissions.IsAuthenticated]
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['sensor__id', 'timestamp'] # Allows searching by sensor ID or date string
 
     def get_queryset(self):
-        # This is the "Magic" part:
-        # We filter the readings based on the owner of the farm the sensor is on
         user = self.request.user
-        return Reading.objects.filter(sensor__farm__owner=user).order_by('-timestamp')
+        queryset = Reading.objects.filter(sensor__farm__owner=user)
+        
+        search = self.request.query_params.get('search', None)
+        
+        if search:
+            search_lower = search.lower()
+            
+            if search_lower == 'abnormal': # for record statuses
+                queryset = queryset.filter(alert__isnull=False).distinct()
+            elif search_lower == 'normal':
+                queryset = queryset.filter(alert__isnull=True)
+            elif search.isdigit():
+                queryset = queryset.filter( #searches by id
+                    Q(id=search) | 
+                    Q(sensor__id=search)
+                )
+            else: # fuzzy search for farm names
+                queryset = queryset.filter(sensor__farm__name__icontains=search)
+                
+        return queryset.order_by('-timestamp')
 
 class AlertViewSet(viewsets.ModelViewSet):
     queryset = Alert.objects.all().order_by('-timestamp')

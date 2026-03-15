@@ -10,8 +10,18 @@ class Farm(models.Model):
         return self.name
 
 class Sensor(models.Model):
+    class StatusChoices(models.TextChoices):
+        ACTIVE = 'Active', 'Active'
+        INACTIVE = 'Inactive', 'Inactive'
+
     farm = models.ForeignKey(Farm, on_delete=models.CASCADE, related_name='sensors')
-    status = models.CharField(max_length=20, default="Active")
+    
+    status = models.CharField(
+        max_length=10, 
+        choices=StatusChoices.choices, 
+        default=StatusChoices.ACTIVE
+    )
+    
     battery_lvl = models.IntegerField(default=100)
     latitude = models.DecimalField(max_digits=9, decimal_places=6)
     longitude = models.DecimalField(max_digits=9, decimal_places=6)
